@@ -42,6 +42,12 @@ Hermes 用户也可以建 no_agent cron 指向 `vrcmon_daily_report.py`——脚
 | `VRC_MONITOR_NODE` | PATH 中的 `node` | node 可执行文件路径 |
 | `VRC_MONITOR_LOG_DIR` | `<项目>/service-logs` | 服务日志 / 修复日志 / watchdog 日志目录 |
 
+## 已知陷阱：uv 创建的 venv 会弹 cmd 窗口
+
+Windows 计划任务运行 console 程序（`python.exe`）时**每次触发都会弹出 cmd 窗口**。改用 `pythonw.exe` 可以解决，但 **uv 创建的 venv，其 `pythonw.exe` 是 redirector——会 re-exec 到基础目录的 console 版解释器并重新弹出窗口**（实测：pythonw 进程伴随 conhost.exe 出现）。
+
+`setup-windows.cmd` 已自动处理：检测到 `pyvenv.cfg`（venv）时，优先使用 `home` 指向的基础目录 `pythonw.exe`（真正的 GUI 子系统、无窗口）。若手动配置，请直接传基础解释器目录的 `pythonw.exe` 路径。
+
 ## 卸载
 
 ```bat

@@ -28,6 +28,14 @@ if "%PYTHON%"=="" (
 rem 优先使用 pythonw.exe（无窗口），避免计划任务每次运行时弹出 cmd 窗口
 set "PYTHONW=%PYTHON:python.exe=pythonw.exe%"
 if not exist "%PYTHONW%" set "PYTHONW=%PYTHON%"
+rem 陷阱：uv 创建的 venv，其 pythonw.exe 是 redirector，可能 re-exec console 版
+rem 解释器并弹出 cmd 窗口（实测）。若检测到 venv（pyvenv.cfg），优先使用
+rem home 指向的基础目录 pythonw.exe（真正的 GUI 子系统、无窗口）
+set "VENV_ROOT=%PYTHON%\..\.."
+if exist "%VENV_ROOT%\pyvenv.cfg" (
+  for /f "tokens=1,* delims==" %%a in ('findstr /b "home" "%VENV_ROOT%\pyvenv.cfg"') do set "UV_HOME=%%b"
+  if defined UV_HOME if exist "%UV_HOME%\pythonw.exe" set "PYTHONW=%UV_HOME%\pythonw.exe"
+)
 
 echo [1/3] 创建 VrcMonWatchdog 计划任务（每 1 分钟崩溃自愈）...
 schtasks /create /tn "VrcMonWatchdog" /tr "\"%PYTHONW%\" \"%CD%\vrcmon_watchdog.py\"" /sc minute /mo 1 /f
